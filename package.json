@@ -1,7 +1,7 @@
 {
     "name": "twitch-rank-showcase",
     "version": "1.0.0",
-    "description": "Professional Twitch Rank Overlay System for Portfolio",
+    "description": "Twitch Rank Overlay System for Portfolio",
     "main": "index.js",
     "scripts": {
         "start": "node index.js"
