@@ -1,4 +1,4 @@
-# 🏆 Professional Twitch Rank Overlay System
+# 🏆Twitch Rank Overlay System
 
 Este es un sistema de gamificación para streamers de Twitch, diseñado para aumentar la interactividad del chat mediante un marcador visual dinámico y animaciones en tiempo real.
 
