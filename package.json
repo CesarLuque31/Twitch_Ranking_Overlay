@@ -1,0 +1,24 @@
+{
+    "name": "twitch-rank-showcase",
+    "version": "1.0.0",
+    "description": "Professional Twitch Rank Overlay System for Portfolio",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "keywords": [
+        "twitch",
+        "bot",
+        "overlay",
+        "rank",
+        "obs",
+        "gaming"
+    ],
+    "author": "Razzluk",
+    "license": "MIT",
+    "dependencies": {
+        "dotenv": "^16.0.0",
+        "express": "^4.18.0",
+        "tmi.js": "^1.8.0"
+    }
+}

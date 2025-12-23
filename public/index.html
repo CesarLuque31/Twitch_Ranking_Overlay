@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RazzBot Rank Overlay - Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --twitch-purple: #9146ff;
+            --neon-cyan: #00fff2;
+            --neon-pink: #ff00ff;
+            --gold: #ffd700;
+            --glass: rgba(10, 10, 15, 0.9);
+            --border-glow: rgba(145, 70, 255, 0.5);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: transparent;
+            /* TRANSPARENTE PARA OBS */
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            text-transform: uppercase;
+            /* TODO EN MAYÚSCULAS */
+        }
+
+        /* Leaderboard Container - FIJO A LA DERECHA */
+        #leaderboard-container {
+            position: absolute;
+            top: 50px;
+            right: 40px;
+            width: 200px;
+            /* Ultra estrecha */
+            background: var(--glass);
+            border: 1px solid var(--twitch-purple);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 50;
+        }
+
+        .leaderboard-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            /* Muy pequeña */
+            font-weight: 900;
+            margin-bottom: 10px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px rgba(0, 255, 242, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+
+        .rank-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 8px;
+            /* Mínimo relleno */
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            border-left: 3px solid transparent;
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .rank-item.top1 {
+            background: rgba(145, 70, 255, 0.2);
+            border-left: 3px solid var(--neon-cyan);
+        }
+
+        .rank-name {
+            font-weight: 700;
+            font-size: 0.8rem;
+            /* Tamaño compacto */
+            letter-spacing: 0.3px;
+            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rank-points {
+            font-weight: 900;
+            font-size: 0.9rem;
+            /* Puntos legibles pero pequeños */
+            color: var(--neon-cyan);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 8px;
+            border-radius: 5px;
+            min-width: 25px;
+            text-align: center;
+        }
+
+        /* Animation Overlay Central */
+        #animation-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .win-announcement {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(100px) scale(0.8);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .win-announcement.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .win-name {
+            font-size: 6rem;
+            font-weight: 900;
+            background: linear-gradient(to right, #fff, var(--neon-cyan), #fff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 30px var(--neon-cyan));
+            margin-bottom: 0px;
+        }
+
+        .win-points {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--gold);
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .win-tag {
+            font-size: 1.8rem;
+            color: #fff;
+            background: var(--twitch-purple);
+            padding: 5px 30px;
+            border-radius: 50px;
+            margin-top: 15px;
+            letter-spacing: 5px;
+            box-shadow: 0 0 20px var(--twitch-purple);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            top: -20px;
+            border-radius: 2px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(720deg);
+            }
+        }
+
+        #status-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            color: var(--neon-cyan);
+            opacity: 0.4;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="status-indicator">● SYSTEM ONLINE</div>
+
+    <div id="leaderboard-container">
+        <div class="leaderboard-title">
+            <span>🏆</span>
+            <span>TOP RANK</span>
+        </div>
+        <div id="leaderboard-list" class="rank-list">
+            <!-- Cargando... -->
+        </div>
+    </div>
+
+    <div id="animation-overlay"></div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const channel = urlParams.get('channel') || 'razzluk';
+
+        // --- SISTEMA DE ARRASTRE (DRAG & DROP) ---
+        function makeDraggable(el, storageKey) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
+            // Cargar posición guardada
+            const saved = localStorage.getItem(storageKey + '_' + channel);
+            if (saved) {
+                const pos = JSON.parse(saved);
+                el.style.left = pos.x + 'px';
+                el.style.top = pos.y + 'px';
+                el.style.right = 'auto'; // Desactivar right si se movió
+                if (el.id === 'animation-overlay') el.style.transform = 'none'; // Quitar center si se movió
+            }
+
+            el.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return; // Solo clic izquierdo
+                isDragging = true;
+                el.style.cursor = 'grabbing';
+                startX = e.clientX;
+                startY = e.clientY;
+                initialX = el.offsetLeft;
+                initialY = el.offsetTop;
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                el.style.left = (initialX + dx) + 'px';
+                el.style.top = (initialY + dy) + 'px';
+                el.style.right = 'auto';
+                if (el.id === 'animation-overlay') el.style.transform = 'none';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    el.style.cursor = 'grab';
+                    // Guardar posición
+                    localStorage.setItem(storageKey + '_' + channel, JSON.stringify({
+                        x: el.offsetLeft,
+                        y: el.offsetTop
+                    }));
+                }
+            });
+
+            el.style.cursor = 'grab';
+        }
+
+        const board = document.getElementById('leaderboard-container');
+        const anim = document.getElementById('animation-overlay');
+
+        makeDraggable(board, 'board_pos');
+        makeDraggable(anim, 'anim_pos');
+
+        let lastLeaderboard = [];
+        let isAnimating = false;
+        let animationQueue = [];
+
+        function updateLeaderboard(list) {
+            const listEl = document.getElementById('leaderboard-list');
+
+            // Si no hay nadie, mostramos un mensaje elegante
+            if (list.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; opacity:0.5; padding:20px;">ESPERANDO GANADORES...</div>';
+                return;
+            }
+
+            // Actualizar lista
+            listEl.innerHTML = '';
+            list.slice(0, 8).forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = `rank-item ${index === 0 ? 'top1' : ''}`;
+                div.innerHTML = `
+                    <span class="rank-name">#${index + 1} ${item.name}</span>
+                    <span class="rank-points">${item.points}</span>
+                `;
+                listEl.appendChild(div);
+            });
+
+            lastLeaderboard = list;
+        }
+
+        function showAnimation(data) {
+            if (isAnimating) {
+                animationQueue.push(data);
+                return;
+            }
+
+            console.log("ANIMATING WINNER:", data.name);
+            isAnimating = true;
+            const overlay = document.getElementById('animation-overlay');
+
+            overlay.innerHTML = `
+                <div class="win-announcement" id="announcement">
+                    <div class="win-name">${data.name}</div>
+                    <div class="win-points">${data.points} PUNTOS</div>
+                    <div class="win-tag">NUEVO PUNTO</div>
+                </div>
+            `;
+
+            createExplosion();
+
+            setTimeout(() => {
+                document.getElementById('announcement').classList.add('active');
+            }, 100);
+
+            // Ack to server
+            fetch('/api/rank/ack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: data.id })
+            });
+
+            setTimeout(() => {
+                const ann = document.getElementById('announcement');
+                if (ann) ann.classList.remove('active');
+
+                setTimeout(() => {
+                    overlay.innerHTML = '';
+                    isAnimating = false;
+                    if (animationQueue.length > 0) {
+                        showAnimation(animationQueue.shift());
+                    }
+                }, 600);
+            }, 5000);
+        }
+
+        function createExplosion() {
+            const colors = ['#9146ff', '#00fff2', '#ff00ff', '#ffd700', '#ffffff'];
+            for (let i = 0; i < 60; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.width = (Math.random() * 8 + 4) + 'px';
+                c.style.height = c.style.width;
+                c.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                c.style.opacity = Math.random();
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 5000);
+            }
+        }
+
+        function poll() {
+            fetch(`/api/rank/data?channel=${channel}`)
+                .then(res => res.json())
+                .then(data => {
+                    updateLeaderboard(data.leaderboard);
+                    if (data.pending && data.pending.length > 0) {
+                        data.pending.forEach(p => showAnimation(p));
+                    }
+                })
+                .catch(err => console.error("POLL ERROR:", err));
+        }
+
+        // Iniciar
+        setInterval(poll, 3000);
+        poll();
+
+    </script>
+</body>
+
+</html>
